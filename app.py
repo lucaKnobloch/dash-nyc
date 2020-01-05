@@ -154,8 +154,8 @@ app.layout = html.Div(
 								data=[
 									# Data for all rides based on date and time
 									go.Scattermapbox(
-										# lat=data['Latitude'],
-										# lon=data['Longitude'],
+										 lat=data['Latitude'],
+										 lon=data['Longitude'],
 										mode='markers',
 										hoverinfo="lat + lon + text",
 										marker=go.scattermapbox.Marker(
