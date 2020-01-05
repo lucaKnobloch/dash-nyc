@@ -3,6 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import plotly.graph_objects as go
+import flask
 
 data = pd.read_csv('merged.csv', index_col='Index')
 # my own token
@@ -52,7 +53,8 @@ chart_data = pd.DataFrame(
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = flask.Flask(__name__)
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets, server=server)
 # Dictionary of important locations in New York
 list_of_locations = {
 	"Madison Square Garden": {"lat": 40.7505, "lon": -73.9934},
