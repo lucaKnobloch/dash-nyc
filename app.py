@@ -1,7 +1,6 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import flask
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -77,8 +76,10 @@ chart_data = pd.DataFrame(
 	 })
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-server = flask.Flask(__name__)
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets, server=server)
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
+
 # Dictionary of important locations in New York
 list_of_locations = {
 	"Madison Square Garden": {"lat": 40.7505, "lon": -73.9934},
@@ -91,28 +92,39 @@ list_of_locations = {
 	"Columbia University": {"lat": 40.8075, "lon": -73.9626},
 	"United Nations HQ": {"lat": 40.7489, "lon": -73.9680},
 }
-
+colors = {
+	'background': '#a4a4a4',
+	'text': '#7FDBFF'
+}
 app.layout = html.Div(
-	children=[
+	html.Div(style={'backgroundColor': colors['background']}, children=[
 		html.Div([
-			html.Div('Dash NYC', style={'fontSize': 30}),
+			html.Div('Dash NYC', style={'fontSize': 30, 'backgroundColor': colors['background']}),
 
 			html.Div(
 				className="row",
+				style={'backgroundColor': colors['background']},
 				children=[
 					# Column for user controls
 					html.Div(
+						style={'backgroundColor': colors['background']},
 						className="four columns div-user-controls",
 						children=[
 							html.P(
-								"""Select different days using the date picker or by selecting 
-								different time frames on the histogram."""
+								"""This Dashboard enables an overview over the amount of people at the 28.01.2017 in New York. Additonal are the 
+								pickup locations visualized. Each can be filtered by the hour."""
+								"""This overview enables the viewer to compare the amount of people which pay with card or credit card. It can also be filtered 
+								by the time to get detailed information"""
+								"""Select different main locations to get a quick overview over the pick up locations
+								 at the hotspots of New York """
 							),
 							# Change to side-by-side for mobile layout
 							html.Div(
+								style={'backgroundColor': colors['background']},
 								className="row",
 								children=[
 									html.Div(
+										style={'backgroundColor': colors['background']},
 										className="div-for-dropdown",
 										children=[
 											# Dropdown for locations on map
@@ -128,12 +140,14 @@ app.layout = html.Div(
 									),
 								],
 							), html.Div(
+								style={'backgroundColor': colors['background']},
 								className="text-padding",
 								children=[
-									"Select any of the bars on the histogram to section data by time."
+									"Select any of the bars on the histogram to section data by time or use the dropdown menu below."
 								],
 							),
 							html.Div(
+								style={'backgroundColor': colors['background']},
 								className="div-for-dropdown",
 								children=[
 									# Dropdown to select times
@@ -152,65 +166,57 @@ app.layout = html.Div(
 								],
 							),
 							html.P(id="total-rides"),
-							html.P(id="total-rides-selection"),
-							html.P(id="date-value"),
+							html.P(id="amount-of-card"),
+							html.P(id="amount-of-cash"),
+
 
 							dcc.Graph(id="histogram"),
 
 						],
 					),
 					# Column for app graphs and plots
-					html.Div(
-						className="eight columns div-for-charts bg-grey",
-						children=[
-							dcc.Graph(id="map-graph"),
+					html.Div(style={'backgroundColor': colors['background']},
+					         className="eight columns div-for-charts bg-grey",
+					         children=[
+						         dcc.Graph(id="map-graph"),
+						         dcc.Graph(id="time-series"),
 
-							dcc.Graph(
-								figure=dict(
-									data=[
-										dict(
-											x=chart_data['Hours'],
-											y=chart_data['Payment_1'],
-											name="Credit Card",
-											marker=dict(
-												color='rgb(55, 83, 109)'
-											)
-										),
-										dict(
-											x=chart_data['Hours'],
-											y=chart_data['Payment_2'],
-											name="Cash",
-											marker=dict(
-												color='rgb(26, 118, 255)'
-											)
-										)
-									],
-									layout=dict(
-										xaxis={
-											'rangeslider': {'visible': True},
-											'rangeselector': {'visible': True,
-											                  'buttons': [{'step': 'all'}, {'step': 'day'},
-											                              {'step': 'hour'}]}
-										}, title_text="Payment",
-										showlegend=True,
-										legend=dict(
-											x=0,
-											y=1.0
-										),
-										margin=dict(l=15, r=15, t=15, b=15)
-									)
-								),
-								style={"height": "100%", "width": "100%"}
-
-							)
-						],
-					),
+					         ],
+					         ),
 				],
 			)
-		], style={'marginBottom': 15, 'marginTop': 15, 'marginLeft': 15, 'marginRight': 15}),
+		], style={'backgroundColor': colors['background'], 'marginBottom': 15, 'marginTop': 15, 'marginLeft': 15,
+		          'marginRight': 15}),
 	]
-)
+	         ))
 
+@app.callback(Output("amount-of-cash", "children"), [Input("hour-selector", "value")])
+def update_total_cash(datePicked):
+	output= 0
+	if datePicked is not None or len(datePicked)==0:
+		for i in range(24):
+			output += chart_data['Payment_2'][i]
+		return "Total amount of people who paied cash: {}".format(
+       output)
+	else:
+		for i in range(len(datePicked)):
+			output += chart_data['Payment_2'][i]
+			return "Total amount of people who paied cash: {}".format(
+				output)
+
+@app.callback(Output("amount-of-card", "children"), [Input("hour-selector", "value")])
+def update_total_cash(datePicked):
+	output= 0
+	if datePicked is not None or len(datePicked)==0:
+		for i in range(24):
+			output += chart_data['Payment_1'][i]
+		return "Total amount of people who paied card: {}".format(
+       output)
+	else:
+		for i in range(len(datePicked)):
+			output += chart_data['Payment_1'][i]
+			return "Total amount of people who paied card: {}".format(
+				output)
 
 # Get the amount of rides per hour based on the time selected
 # This also higlights the color of the histogram bars based on
@@ -257,6 +263,54 @@ def get_selection(selection):
 		# Get the number of rides at a particular time
 		yVal.append(chart_data['Amount_of_people'][i])
 	return [np.array(xVal), np.array(yVal), np.array(colorVal)]
+
+
+@app.callback(Output("time-series", "figure"),
+              [Input("hour-selector", "value")])
+def update_time_series(selected_hour):
+	global hour_to_show
+	if selected_hour is None or len(selected_hour) == 0:
+		hour_to_show = chart_data['Hours']
+		data_to_show_1 = chart_data['Payment_1']
+		data_to_show_2 = chart_data['Payment_2']
+	else:
+		for i in selected_hour:
+			hour_to_show = chart_data['Hours'][int(i) - 4:int(i) + 4]
+			data_to_show_1 = chart_data['Payment_1'][int(i) - 4:int(i) + 4]
+			data_to_show_2 = chart_data['Payment_2'][int(i) - 4:int(i) + 4]
+
+	return go.Figure(
+		data=[
+			dict(
+				x=hour_to_show,
+				y=data_to_show_1,
+				name="Credit Card",
+				marker=dict(
+					color='rgb(55, 83, 109)'
+				)
+			),
+			dict(
+				x=hour_to_show,
+				y=data_to_show_2,
+				name="Cash",
+				marker=dict(
+					color='rgb(26, 118, 255)'
+				)
+			)
+		],
+		layout=go.Layout(
+			xaxis={
+				'rangeslider': {'visible': True},
+			}, title_text="How do passengers pay?",
+			showlegend=True,
+			legend=dict(
+				x=0,
+				y=1.0
+			),
+			margin=dict(l=15, r=15, t=30, b=15)
+		)
+
+	)
 
 
 # Selected Data in the Histogram updates the Values in the hour selector
@@ -312,7 +366,7 @@ def update_histogram(hour_selection):
 		bargap=0.01,
 		bargroupgap=0,
 		barmode="group",
-		margin=go.layout.Margin(l=10, r=0, t=0, b=50),
+		margin=go.layout.Margin(l=15, r=15, t=15, b=15),
 		showlegend=False,
 		plot_bgcolor="#323130",
 		paper_bgcolor="#323130",
@@ -438,8 +492,9 @@ def update_graph(selectedData, selectedLocation):
 			),
 		],
 		layout=go.Layout(
+			title_text='Where are passengers picked up?',
 			autosize=True,
-			margin=dict(l=15, r=15, t=15, b=15),
+			margin=dict(l=15, r=15, t=30, b=15),
 			showlegend=False,
 			mapbox=dict(
 				accesstoken=mapbox_access_token,
@@ -500,11 +555,12 @@ def getLatLonColor(selectedData):
 			latCoords = chart_data['Latitude'][int(i)]
 			longCoords = chart_data['Longitude'][int(i)]
 
-	elif len(selectedData) > 1 :
+	elif len(selectedData) > 1:
 		for i in selectedData:
 			latCoords.extend(chart_data['Latitude'][int(i)])
 			longCoords.extend(chart_data['Longitude'][int(i)])
 	return longCoords, latCoords
+
 
 if __name__ == "__main__":
 	app.run_server(debug=True)
