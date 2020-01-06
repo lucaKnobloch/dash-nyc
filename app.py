@@ -205,12 +205,12 @@ def update_total_cash(datePicked):
 	if datePicked is not None or len(datePicked) == 0:
 		for i in range(24):
 			output += chart_data['Payment_2'][i]
-		return "Total amount of people who paied cash: {}".format(
+		return "Total amount of people who paid cash: {}".format(
 			output)
 	else:
 		for i in range(len(datePicked)):
 			output += chart_data['Payment_2'][i]
-			return "Total amount of people who paied cash: {}".format(
+			return "Total amount of people who paid cash: {}".format(
 				output)
 
 
