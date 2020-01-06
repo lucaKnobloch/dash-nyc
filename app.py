@@ -111,12 +111,12 @@ app.layout = html.Div(
 						className="four columns div-user-controls",
 						children=[
 							html.P(
-								"""This Dashboard enables an overview over the amount of people at the 28.01.2017 in New York. Additonal are the 
-								pickup locations visualized. Each can be filtered by the hour."""
+								"""This Dashboard enables an overview over the number of people at the 28.01.2017 in New York. Additional is the pickup locations visualized. Each can be filtered by the hour."""
 								"""This overview enables the viewer to compare the amount of people which pay with card or credit card. It can also be filtered 
 								by the time to get detailed information"""
-								"""Select different main locations to get a quick overview over the pick up locations
+								"""Select different main locations to get a quick overview over the pickup locations
 								 at the hotspots of New York """
+
 							),
 							# Change to side-by-side for mobile layout
 							html.Div(
@@ -168,7 +168,7 @@ app.layout = html.Div(
 							html.P(id="total-rides"),
 							html.P(id="amount-of-card"),
 							html.P(id="amount-of-cash"),
-
+							html.P(id="select-cor"),
 
 							dcc.Graph(id="histogram"),
 
@@ -190,33 +190,44 @@ app.layout = html.Div(
 	]
 	         ))
 
+
+@app.callback(Output("select-cor", "children"), [Input("map-graph", "clickData")])
+def show_cord(selection):
+	if selection is not None:
+		if len(selection) != 0:
+			string = "Selected PickUp Location: Lon = {0:.2f} Lat = {0:.2f} "
+			return string.format(selection['points'][0]['lon'], selection['points'][0]['lat'])
+
+
 @app.callback(Output("amount-of-cash", "children"), [Input("hour-selector", "value")])
 def update_total_cash(datePicked):
-	output= 0
-	if datePicked is not None or len(datePicked)==0:
+	output = 0
+	if datePicked is not None or len(datePicked) == 0:
 		for i in range(24):
 			output += chart_data['Payment_2'][i]
 		return "Total amount of people who paied cash: {}".format(
-       output)
+			output)
 	else:
 		for i in range(len(datePicked)):
 			output += chart_data['Payment_2'][i]
 			return "Total amount of people who paied cash: {}".format(
 				output)
 
+
 @app.callback(Output("amount-of-card", "children"), [Input("hour-selector", "value")])
 def update_total_cash(datePicked):
-	output= 0
-	if datePicked is not None or len(datePicked)==0:
+	output = 0
+	if datePicked is not None or len(datePicked) == 0:
 		for i in range(24):
 			output += chart_data['Payment_1'][i]
 		return "Total amount of people who paied card: {}".format(
-       output)
+			output)
 	else:
 		for i in range(len(datePicked)):
 			output += chart_data['Payment_1'][i]
 			return "Total amount of people who paied card: {}".format(
 				output)
+
 
 # Get the amount of rides per hour based on the time selected
 # This also higlights the color of the histogram bars based on
@@ -275,9 +286,18 @@ def update_time_series(selected_hour):
 		data_to_show_2 = chart_data['Payment_2']
 	else:
 		for i in selected_hour:
-			hour_to_show = chart_data['Hours'][int(i) - 4:int(i) + 4]
-			data_to_show_1 = chart_data['Payment_1'][int(i) - 4:int(i) + 4]
-			data_to_show_2 = chart_data['Payment_2'][int(i) - 4:int(i) + 4]
+			if int(i) <= 4:
+				hour_to_show = chart_data['Hours'][int(i):int(i) + 4]
+				data_to_show_1 = chart_data['Payment_1'][int(i):int(i) + 4]
+				data_to_show_2 = chart_data['Payment_2'][int(i):int(i) + 4]
+			elif int(i) >= 20:
+				hour_to_show = chart_data['Hours'][int(i) - 4:int(i)]
+				data_to_show_1 = chart_data['Payment_1'][int(i) - 4:int(i)]
+				data_to_show_2 = chart_data['Payment_2'][int(i) - 4:int(i)]
+			else:
+				hour_to_show = chart_data['Hours'][int(i) - 4:int(i) + 4]
+				data_to_show_1 = chart_data['Payment_1'][int(i) - 4:int(i) + 4]
+				data_to_show_2 = chart_data['Payment_2'][int(i) - 4:int(i) + 4]
 
 	return go.Figure(
 		data=[
@@ -445,8 +465,7 @@ def update_graph(selectedData, selectedLocation):
 				lat=lat,
 				lon=long,
 				mode="markers",
-				hoverinfo="lat+lon+text",
-				text=chart_data['Hours'],
+				hoverinfo="lat+lon",
 				marker=dict(
 					showscale=False,
 					# color=np.append(np.insert(len(chart_data['Hours']), 0, 0), 23),
