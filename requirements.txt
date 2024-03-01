@@ -3,7 +3,7 @@ pandas==0.24.1
 gunicorn==19.9.0
 dash-cytoscape==0.0.5
 biopython==1.74.0
-dash-core-components==1.0.0
+dash-core-components==2.0.0
 dash-html-components==1.0.0
 dash-renderer==1.0.0
 plotly==4.4.1
